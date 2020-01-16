@@ -1,72 +1,37 @@
 # -*- coding:utf-8 -*-
-from ig.talking.utils import generate_id
-from ig.talking.message.model import Message
+from config import HOST_ROOM, PORT_ROOM, DB_ROOM
+from message.model import Message
+from user.model import User
+from utils import generate_id
+
+
+import redis
+
+pool_room = redis.ConnectionPool(host=HOST_ROOM, port=PORT_ROOM,db=DB_ROOM)
+Redis_Room = redis.Redis(connection_pool=pool_room)
+
 
 __author__ = 'mxj'
 __date__ = '2019/8/27 18:26'
 
 class Room(object):
 
-    def __init__(self,id=None,users=[],**kwargs):
+    def __init__(self,id,**kwargs):
         """
         @author: mxj
         @date: 2019-08-27 18:32:10
         @description: 聊天室
         """
-        self.room_id = id
-        if id is None:
-            self.autoset_id()
-        self.users_ = users
-        self.messages_ = {}
+        self.id = id
 
-    @property
-    def id(self):
-        """
-        @author: mxj
-        @date: 2019-08-27 18:32:10
-        @description: 查看聊天室id
-        """
-        return self.room_id
-
-    @id.setter
-    def id(self,newid):
-        """
-        @author: mxj
-        @date: 2019-08-27 18:38:48
-        @description: 设置房间id
-        """
-        if not self.id:
-            self.room_id = newid
-
-    @id.deleter
-    def id(self,ctx=None):
-        """
-        @author: mxj
-        @date: 2020-01-16 18:53:57
-        @description: 不允许删除房间id
-        """
-        raise Exception('房间id无法删除')
-
-    def autoset_id(self):
+    @classmethod
+    def create_room(self):
         """
         @author: mxj
         @date: 2020-01-16 18:51:24
-        @description: 自动生成房间id
+        @description: 新建房间
         """
-        if not self.room_id:
-            newid = generate_id()
-            self.room_id = newid
-
-
-    @property
-    def users(self):
-        """
-        @author: mxj
-        @date: 2019-08-27 18:32:10
-        @description: 聊天室内所有用户id
-        """
-        return self.users_
-
+        return Room(generate_id())
 
     def add_user(self,userid):
         """
@@ -74,8 +39,8 @@ class Room(object):
         @date: 2019-08-27 18:32:10
         @description: 添加聊天室内的用户
         """
-        if userid not in self.users_:
-            self.users_.append(userid)
+        user = User(userid)
+        user.add_room(self.id)
 
     def del_user(self,userid):
         """
@@ -83,8 +48,8 @@ class Room(object):
         @date: 2019-08-27 18:32:10
         @description: 删除聊天室内的用户
         """
-        if userid  in self.users_:
-            self.users_.remove(userid)
+        user = User(userid)
+        user.del_room(self.id)
 
 
     @property
@@ -94,11 +59,15 @@ class Room(object):
         @date: 2019-08-27 18:32:10
         @description: 聊天室消息对象
         """
-        return Message(self.id)
-
-
+        return Message(self.id).get_messages()
+    @staticmethod
+    def has_room(self):
+        """
+        date:2020-01-16 22:08:54
+        description：判断房间对象是否存在
+        """
+        return Redis_Room.exists(self.id)
 
 if __name__ == '__main__':
     room = Room()
-    room.id = 23
-    print room.message.id_
+    print(room.message.room_id)
